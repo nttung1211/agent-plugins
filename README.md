@@ -1,135 +1,36 @@
-# u — small Claude Code helpers
+# agent-plugins
 
-A Claude Code plugin with two commands:
+nttung1211's Claude Code plugins.
 
-- **`/u:cm`**: run a shell command in a chosen folder
-- **`/u:cr`**: start Claude sessions in other folders that you can drive from your phone
-
-## Install
+## Add this marketplace (once)
 
 In Claude Code:
 
 ```
-/plugin marketplace add nttung1211/agent-utils-plugin
-/plugin install u@agent-utils-plugin
+/plugin marketplace add nttung1211/agent-plugins
 ```
 
----
+Then install any plugin below with `/plugin install <plugin>@nttung1211`.
 
-## /u:cm — run a command in a folder
+## Plugins
 
-```
-/u:cm <command> [$in <folder>]
-```
+| Plugin | Install | What it does |
+|---|---|---|
+| [u](plugins/u) | `/plugin install u@nttung1211` | `/u:cm` runs a shell command in a chosen folder. `/u:cr` starts Claude sessions in other folders that you can drive from your phone. |
 
-Examples:
+## Add a new plugin (for the maintainer)
 
-```
-/u:cm git status                  # in the folder Claude was started in
-/u:cm git remote -v $in dev/api   # in ~/dev/api
-/u:cm ls $in ./notes              # in ./notes, next to where Claude was started
-```
-
-**Folders:**
-
-| You type | It means |
-|---|---|
-| nothing | the folder Claude was started in |
-| `~/x` or `/full/path` | exactly that |
-| `./x` or `../x` | relative to the folder Claude was started in |
-| `dev/x` (no prefix) | `~/dev/x` |
-
-If the folder or the command looks wrong, `/u:cm` suggests a fix and asks before running.
-Risky commands (like `rm -r` or `git push --force`) always ask first.
-
----
-
-## /u:cr — Claude sessions you can drive from your phone
-
-`/u:cr` starts Claude Code sessions in other folders, each with Remote Control turned on.
-Each one runs inside tmux, so it keeps running after you close the window,
-and you can use it from the **Code tab in the Claude app** or attach to it on the Mac.
-
-### One-time setup
-
-1. Install tmux:
-   ```sh
-   brew install tmux
+1. Create `plugins/<name>/` with `.claude-plugin/plugin.json` (`"name": "<name>"`) and its `skills/`.
+2. Add an entry to `.claude-plugin/marketplace.json`:
+   ```json
+   { "name": "<name>", "source": "./plugins/<name>", "description": "…" }
    ```
-2. In the project where you want to use `/u:cr`, run:
-   ```
-   /u:cr init
-   ```
+3. Add a row to the table above.
+4. Run `claude plugin validate .`, then commit and push.
 
-`/u:cr` only works in Claude sessions started in a folder where `init` was run.
+To release a change to a plugin, bump `version` in its `plugin.json`.
+Installed copies only update when the version changes.
 
-### Commands
+## License
 
-| Command | What it does |
-|---|---|
-| `/u:cr mk <name> <dir>` | Start a new session called `<name>` in `<dir>` |
-| `/u:cr ls` | List running sessions |
-| `/u:cr rm <name>` | Close one session |
-| `/u:cr cl` | Close all sessions |
-| `/u:cr init` | Setup (safe to run again) |
-
-Examples:
-
-```
-/u:cr mk api ~/dev/api      # folder in your home
-/u:cr mk notes ./notes      # folder next to where Claude was started
-/u:cr rm api
-```
-
-**Names** can use letters, digits, `-` and `_` only. Use the exact name every time.
-
-**Folders** follow the same rules as `/u:cm`. A folder is required.
-If it doesn't exist, `/u:cr` suggests similar folders or offers to create it.
-
-### Use a session
-
-**On your phone:** open the Claude app → **Code** tab → pick the session by name.
-
-**On the Mac:** open Terminal and run:
-
-```sh
-tmux -L cr attach -t '=<name>'
-```
-
-| To… | Press |
-|---|---|
-| Leave without stopping it | `Ctrl+b`, let go, then `d` |
-| Scroll back | `Ctrl+b`, then `[` (press `q` to stop) |
-| Send Ctrl+b to Claude | `Ctrl+b` twice |
-
-Closing the Terminal window also just leaves; the session keeps running.
-
-To see sessions from Terminal: `tmux -L cr ls`
-
-### Safety
-
-Sessions started by `/u:cr` stay in the sandbox. If one needs to run a command outside the sandbox,
-including any `tmux` command, it **asks you first**, even in auto mode.
-
-These rules live in `skills/cr/spawn-settings.json`. `/u:cr mk` refuses to start a session without it.
-
-One exception: commands a project lists in its own `sandbox.excludedCommands` setting can still run without asking.
-
-### Resume a closed session
-
-After `/u:cr rm`, you can pick the conversation back up in that folder:
-
-```sh
-cd <dir>
-claude --continue
-```
-
-### Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| Error mentioning `Operation not permitted` or `/private/tmp/tmux-…` | Run `/u:cr init` in the folder Claude was started in |
-| `/u:cr` says tmux is missing | `brew install tmux` |
-| Session not on your phone | Run `/u:cr ls` to check it's running, then attach on the Mac to see what's on screen |
-| `attach` says "no sessions" | Did you include `-L cr`? It's required |
-| zsh says `t1 not found` | Keep the quotes: `-t '=t1'` |
+MIT
