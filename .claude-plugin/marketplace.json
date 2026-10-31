@@ -1,0 +1,14 @@
+{
+  "name": "agent-utils-plugin",
+  "description": "nttung1211's Claude Code plugins.",
+  "owner": {
+    "name": "nttung1211"
+  },
+  "plugins": [
+    {
+      "name": "u",
+      "source": "./",
+      "description": "Small Claude Code helpers: /u:cm runs a shell command in a chosen folder, /u:cr starts Remote Control sessions in other folders via tmux."
+    }
+  ]
+}
