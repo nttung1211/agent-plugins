@@ -1,6 +1,6 @@
 ---
 name: cr
-description: Create, list, attach to, and remove Claude Code Remote Control sessions in other folders via tmux.
+description: Create, list, and remove Claude Code Remote Control sessions in other folders via tmux.
 argument-hint: "init | mk <name> <dir> [c] | ls | rm <name> | cl"
 disable-model-invocation: true
 allowed-tools: Bash(tmux:*), Bash(sleep:*), Bash(command -v:*), Bash(ls:*), Bash(mkdir:*)
