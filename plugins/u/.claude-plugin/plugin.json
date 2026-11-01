@@ -1,6 +1,6 @@
 {
   "name": "u",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Small Claude Code helpers: /u:cm runs a shell command in a chosen folder, /u:cr starts Remote Control sessions in other folders via tmux.",
   "author": {
     "name": "nttung1211"

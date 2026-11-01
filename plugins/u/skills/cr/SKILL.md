@@ -1,7 +1,7 @@
 ---
 name: cr
 description: Create, list, attach to, and remove Claude Code Remote Control sessions in other folders via tmux.
-argument-hint: "init | mk <name> <dir> | ls | rm <name> | cl"
+argument-hint: "init | mk <name> <dir> [c] | ls | rm <name> | cl"
 disable-model-invocation: true
 allowed-tools: Bash(tmux:*), Bash(sleep:*), Bash(command -v:*), Bash(ls:*), Bash(mkdir:*)
 ---
@@ -12,7 +12,7 @@ Raw input: `$ARGUMENTS`
 
 Split the input on whitespace. The first word is the subcommand; the rest are its arguments. With no arguments, an unknown subcommand, or missing arguments, reply with the usage line and stop:
 
-`/u:cr init | mk <name> <dir> | ls | rm <name> | cl`
+`/u:cr init | mk <name> <dir> [c] | ls | rm <name> | cl`
 
 ## Rules for every subcommand
 
@@ -39,7 +39,9 @@ Split the input on whitespace. The first word is the subcommand; the rest are it
    If the first call fails, show the error. If it looks like the sandbox (see the rules above), the running session probably hasn't picked up the new setting yet. Tell the user to restart Claude Code in LAUNCH and rerun `/u:cr init`. If `/status` or the docs show the sandbox is admin-required, local settings files are ignored. In that case, offer to put the same entry in `~/.claude/settings.json` instead, and ask before writing it. If the error isn't sandbox-related, say what it points to.
 4. Report what changed (file created, entry added) or "already set up", plus the verification result.
 
-## /u:cr mk <name> <dir>
+## /u:cr mk <name> <dir> [c]
+
+The optional third word `c` means "create the folder if it doesn't exist". Any other third word, or more than three words, gets the usage line.
 
 1. **Check the name.** It may contain only letters, digits, `-`, `_` and `/`. It can't start or end with `/` or contain `//`. tmux rejects `.` and `:`, and a leading `/` reads like a path or a slash command. If the name breaks a rule, say why and stop.
 
@@ -54,13 +56,16 @@ Split the input on whitespace. The first word is the subcommand; the rest are it
    | anything else, e.g. `dev/project` | `$HOME/dev/project` |
 
    Strip surrounding quotes, apply the table to get an absolute path, then check it with `ls -ldL '<resolved>'`. The `-L` follows symlinks, so a symlink to a folder counts as a folder.
-   - A line starting with `d` means it's a directory. Use it.
-   - If it's missing or is a file, don't start anything. Instead:
+   - A line starting with `d` means it's a directory. Use it. A `c` changes nothing here.
+   - If it's missing and `c` was given, create it right away, as described under **Create the folder**, with no suggestions and no question.
+   - If it exists but is a file and `c` was given, say so and stop. Never overwrite or rename a file.
+   - Otherwise, when it's missing or is a file, don't start anything. Instead:
      - List the deepest parent that exists with `ls '<parent>'`. Suggest up to 5 close matches: case differences, typos 1–2 letters off, and prefix or partial matches.
      - Also check the other plausible reading. For example, if `dev/x` → `~/dev/x` is missing but `LAUNCH/dev/x` exists, offer that.
      - If nothing turns up, search a little wider: `find "$HOME" -maxdepth 4 -type d -iname '*<last path part>*'`. That command isn't pre-approved, so expect a prompt.
      - Show the matches as a numbered list, and add an option to create `<resolved>`. Wait for the user's answer.
-     - If they choose to create it, run `mkdir -p '<resolved>'`. If the sandbox blocks that, run it through the tmux server instead: `tmux -L cr start-server ';' run-shell 'mkdir -p "<resolved>"'`. `start-server` is needed because `run-shell` fails when no tmux server is running yet. `run-shell` waits for `mkdir` to finish and returns an error if it fails. Then confirm with `ls -ldL '<resolved>'`.
+     - If they choose to create it, create it as described under **Create the folder**.
+   - **Create the folder:** run `mkdir -p '<resolved>'`. If the sandbox blocks that, run it through the tmux server instead: `tmux -L cr start-server ';' run-shell 'mkdir -p "<resolved>"'`. `start-server` is needed because `run-shell` fails when no tmux server is running yet. `run-shell` waits for `mkdir` to finish and returns an error if it fails. Then confirm with `ls -ldL '<resolved>'`. If it still isn't a directory, show the error and stop.
 3. **Start the session.** First run `ls '${CLAUDE_PLUGIN_ROOT}/skills/cr/spawn-settings.json'`. If the file is missing, say so and stop. Never start a child without it. Then start it with one call:
 
    `tmux -L cr new-session -d -x 200 -y 50 -s <name> -c '<resolved>' 'caffeinate -i claude --remote-control "<name>" --settings "${CLAUDE_PLUGIN_ROOT}/skills/cr/spawn-settings.json"'`
@@ -74,7 +79,7 @@ Split the input on whitespace. The first word is the subcommand; the rest are it
 
    If a dialog fits neither case, show it to the user and ask what to choose. Never pick an option that grants extra permissions, such as bypassing permission prompts, on your own.
 5. **Check the result.** Read the pane and judge by meaning whether Claude is running and Remote Control is connected. Today this shows as an "/rc active" label in the bottom bar.
-   - Clearly connected → reply in one line: `✅ <name> is up in <resolved>. Open it from the Code tab, or attach on the Mac: tmux -L cr attach -t '=<name>'`
+   - Clearly connected → reply in one line: `✅ <name> is up in <resolved>. Open it from the Code tab, or attach on the Mac: tmux -L cr attach -t '=<name>'`. If this run created the folder, write `(new folder)` right after `<resolved>`.
    - Clearly an error → show the relevant lines, then run `tmux -L cr kill-session -t '=<name>'`.
    - Unsure → show the pane, and say the session is still running so the user can check the Code tab on their phone.
 

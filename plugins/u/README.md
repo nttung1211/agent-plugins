@@ -67,7 +67,7 @@ and you can use it from the **Code tab in the Claude app** or attach to it on th
 
 | Command | What it does |
 |---|---|
-| `/u:cr mk <name> <dir>` | Start a new session called `<name>` in `<dir>` |
+| `/u:cr mk <name> <dir> [c]` | Start a new session called `<name>` in `<dir>`. Add `c` to create the folder if it doesn't exist |
 | `/u:cr ls` | List running sessions |
 | `/u:cr rm <name>` | Close one session |
 | `/u:cr cl` | Close all sessions |
@@ -78,6 +78,7 @@ Examples:
 ```
 /u:cr mk api ~/dev/api      # folder in your home
 /u:cr mk notes ./notes      # folder next to where Claude was started
+/u:cr mk draft dev/test/writing/cq c   # create ~/dev/test/writing/cq if missing
 /u:cr rm api
 ```
 
@@ -85,6 +86,7 @@ Examples:
 
 **Folders** follow the same rules as `/u:cm`. A folder is required.
 If it doesn't exist, `/u:cr` suggests similar folders or offers to create it.
+With `c` at the end, it creates the folder straight away, without asking.
 
 ### Use a session
 
