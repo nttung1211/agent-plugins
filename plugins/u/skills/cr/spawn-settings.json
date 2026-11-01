@@ -1,6 +1,0 @@
-{
-  "sandbox": { "enabled": true },
-  "permissions": {
-    "ask": ["Bash(dangerouslyDisableSandbox:true)", "Bash(tmux *)"]
-  }
-}

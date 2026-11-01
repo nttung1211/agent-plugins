@@ -50,18 +50,16 @@ Risky commands (like `rm -r` or `git push --force`) always ask first.
 Each one runs inside tmux, so it keeps running after you close the window,
 and you can use it from the **Code tab in the Claude app** or attach to it on the Mac.
 
-### One-time setup
+### Setup
 
-1. Install tmux:
-   ```sh
-   brew install tmux
-   ```
-2. In the project where you want to use `/u:cr`, run:
-   ```
-   /u:cr init
-   ```
+Install tmux once:
 
-`/u:cr` only works in Claude sessions started in a folder where `init` was run.
+```sh
+brew install tmux
+```
+
+That's all. `/u:cr` works in any folder, including from inside a session it started,
+so you can create new sessions from your phone.
 
 ### Commands
 
@@ -69,9 +67,8 @@ and you can use it from the **Code tab in the Claude app** or attach to it on th
 |---|---|
 | `/u:cr mk <name> <dir> [c]` | Start a new session called `<name>` in `<dir>`. Add `c` to create the folder if it doesn't exist |
 | `/u:cr ls` | List running sessions |
-| `/u:cr rm <name>` | Close one session |
-| `/u:cr cl` | Close all sessions |
-| `/u:cr init` | Setup (safe to run again) |
+| `/u:cr rm <name>` | Close one session (not the one you're typing in) |
+| `/u:cr cl` | Close all sessions, except the one you're typing in |
 
 Examples:
 
@@ -108,14 +105,14 @@ Closing the Terminal window also just leaves; the session keeps running.
 
 To see sessions from Terminal: `tmux -L cr ls`
 
-### Safety
+### Permissions
 
-Sessions started by `/u:cr` stay in the sandbox. If one needs to run a command outside the sandbox,
-including any `tmux` command, it **asks you first**, even in auto mode.
+Sessions started by `/u:cr` are normal Claude Code sessions with Remote Control on.
+They use your usual settings and permission mode, just like a session you open yourself.
 
-These rules live in `skills/cr/spawn-settings.json`. `/u:cr mk` refuses to start a session without it.
-
-One exception: commands a project lists in its own `sandbox.excludedCommands` setting can still run without asking.
+The Bash sandbox blocks tmux, so `/u:cr` runs its tmux commands outside the sandbox.
+That goes through your normal permission check: in auto mode it runs without stopping you,
+in manual mode you may be asked to approve.
 
 ### Resume a closed session
 
@@ -130,7 +127,7 @@ claude --continue
 
 | Problem | Fix |
 |---|---|
-| Error mentioning `Operation not permitted` or `/private/tmp/tmux-…` | Run `/u:cr init` in the folder Claude was started in |
+| Error mentioning `Operation not permitted` or `/private/tmp/tmux-…` | A tmux command ran inside the sandbox. Approve it to run outside the sandbox, or use auto mode |
 | `/u:cr` says tmux is missing | `brew install tmux` |
 | Session not on your phone | Run `/u:cr ls` to check it's running, then attach on the Mac to see what's on screen |
 | `attach` says "no sessions" | Did you include `-L cr`? It's required |
@@ -138,13 +135,12 @@ claude --continue
 
 ### Notes for maintainers
 
-**Keep backticks and `$(` out of tmux commands.** The sandbox exclusion `tmux *` only applies when
-a Bash call is purely a tmux command. If the call's text contains a backtick or `$(`, the sandbox
-treats it as command substitution and keeps the whole call sandboxed, even inside single quotes.
-tmux then fails with `Operation not permitted`, which looks like a missing `/u:cr init`.
+**tmux runs outside the sandbox.** Every tmux call in the skill uses `dangerouslyDisableSandbox: true`,
+because the sandbox blocks the tmux socket under `/private/tmp/tmux-<uid>/`.
+Earlier versions (0.1.x) used a per-folder `sandbox.excludedCommands` entry from `/u:cr init` instead;
+0.2.0 dropped that, so there's no setup per folder.
 
-- Today `/u:cr` only sends fixed keys (`/exit`, `Enter`, `Up`/`Down`, `C-c`), so it isn't affected.
-- If you add a feature that sends user text into a session (for example `/u:cr send <name> <msg>`),
-  don't put the text in `send-keys`. Write it to a temp file and use
-  `tmux -L cr load-buffer <file>` + `tmux -L cr paste-buffer -t '=<name>:'`,
-  so the command only contains a file path.
+**Sending user text into a session.** `/u:cr` only sends fixed keys today (`/exit`, `Enter`, `Up`/`Down`, `C-c`).
+If you add a feature that sends free text (for example `/u:cr send <name> <msg>`), don't put the text
+in `send-keys`, where quotes and backticks get messy. Write it to a temp file and use
+`tmux -L cr load-buffer <file>` + `tmux -L cr paste-buffer -t '=<name>:'`.
