@@ -81,7 +81,7 @@ Examples:
 /u:cr rm api
 ```
 
-**Names** can use letters, digits, `-` and `_` only. Use the exact name every time.
+**Names** can use letters, digits, `-`, `_` and `/` (like `api/v2`), but can't start or end with `/`. Use the exact name every time.
 
 **Folders** follow the same rules as `/u:cm`. A folder is required.
 If it doesn't exist, `/u:cr` suggests similar folders or offers to create it.

@@ -41,7 +41,7 @@ Split the input on whitespace. The first word is the subcommand; the rest are it
 
 ## /u:cr mk <name> <dir>
 
-1. **Check the name.** It may contain only letters, digits, `-` and `_`, because tmux rejects `.` and `:`. If it doesn't, say why and stop.
+1. **Check the name.** It may contain only letters, digits, `-`, `_` and `/`. It can't start or end with `/` or contain `//`. tmux rejects `.` and `:`, and a leading `/` reads like a path or a slash command. If the name breaks a rule, say why and stop.
 
    Run `tmux -L cr has-session -t '=<name>'`. If it succeeds, say the session already exists and stop. A "no server" or "can't find session" error means the name is free.
 2. **Resolve dir:**
