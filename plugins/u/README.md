@@ -135,3 +135,16 @@ claude --continue
 | Session not on your phone | Run `/u:cr ls` to check it's running, then attach on the Mac to see what's on screen |
 | `attach` says "no sessions" | Did you include `-L cr`? It's required |
 | zsh says `t1 not found` | Keep the quotes: `-t '=t1'` |
+
+### Notes for maintainers
+
+**Keep backticks and `$(` out of tmux commands.** The sandbox exclusion `tmux *` only applies when
+a Bash call is purely a tmux command. If the call's text contains a backtick or `$(`, the sandbox
+treats it as command substitution and keeps the whole call sandboxed, even inside single quotes.
+tmux then fails with `Operation not permitted`, which looks like a missing `/u:cr init`.
+
+- Today `/u:cr` only sends fixed keys (`/exit`, `Enter`, `Up`/`Down`, `C-c`), so it isn't affected.
+- If you add a feature that sends user text into a session (for example `/u:cr send <name> <msg>`),
+  don't put the text in `send-keys`. Write it to a temp file and use
+  `tmux -L cr load-buffer <file>` + `tmux -L cr paste-buffer -t '=<name>:'`,
+  so the command only contains a file path.
